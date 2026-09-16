@@ -1,0 +1,42 @@
+# Default configuration for CIFAR-10 training
+seed: 42
+num_ensemble: 1  # Number of ensemble members to train (trains with seeds: seed, seed+1, seed+2, ...)
+device: cuda
+time_append: ""  # Append string to output directory name (e.g., "-resnet18-lr0.001")
+dataset: cifar10  # Dataset to train on (cifar10 or mnist)
+
+model:
+  arch: efficientnet_b0 # resnet18 (11.18m), resnet50 (23.53m), efficientnet_b0 (4.02m), vit_b16 (85.81m)
+  pretrained: false  # Use ImageNet pretrained weights (with head replacement)
+  dropout_type: none  # none, standard, mc_dropout
+  mc_dropout_p: 0.2  # Dropout probability for MC dropout
+  num_mc_passes: 10  # Number of stochastic inference passes when saving logits with mc_dropout (each pass has different dropout masks)
+
+data:
+  batch_size: 128
+  num_workers: 4
+  data_dir: ./data
+  id_classes: "0123456"  # String of in-distribution class indices (e.g., "01" for 2 classes, "459" for arbitrary subset)
+  id_only_head: true  # If true, use head with only len(id_classes) neurons; if false, use 10 neurons with OOD classes as dummy
+  data_ratio: 1.0  # Fraction of training data to use (0, 1]. If < 1, uses fixed random subset
+
+training:
+  epochs: 200
+  optimizer: adamw  # adamw or sgd
+  learning_rate: 1e-3  # Learning rate (1e-3 for AdamW, 0.1 for SGD)
+  momentum: 0.9  # Momentum for SGD (ignored for AdamW)
+  weight_decay: 0
+  max_grad_norm: 1.0  # Gradient clipping (None to disable, e.g., 1.0 for clipping)
+  save_model: false  # Save trained model to checkpoint
+  save_logits_every_n_epochs: 0  # Save validation logits every N epochs (0 = only save final logits)
+
+  # Validation schedule
+  val_per_epoch: 1  # Number of validation checkpoints per epoch
+
+# Hydra settings
+hydra:
+  run:
+    dir: logs/${now:%Y-%m-%d}/${now:%H-%M-%S}${time_append}
+  output_subdir: .hydra
+  job:
+    chdir: true
